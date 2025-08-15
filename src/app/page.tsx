@@ -198,7 +198,7 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
 
 					{/* Shortcut hint pill (purely visual) */}
 					<kbd className="hidden select-none items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium text-neutral-300 sm:flex">
-						⌘ <span className="text-neutral-400">Space</span>
+						↵ <span className="text-neutral-400">Enter</span>
 					</kbd>
 				</div>
 			</div>
