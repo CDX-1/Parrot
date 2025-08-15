@@ -1,103 +1,208 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useState, useRef } from 'react';
+
+// Type declarations for Web Speech API
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onstart: ((this: SpeechRecognition, ev: Event) => void) | null;
+  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void) | null;
+  onerror: ((this: SpeechRecognition, ev: Event) => void) | null;
+  onend: ((this: SpeechRecognition, ev: Event) => void) | null;
+  start(): void;
+  stop(): void;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+type SpotlightProps = {
+  /** Set to false if you want to control visibility from a parent. Default: true */
+  open?: boolean;
+  /** Optional ARIA label for screen readers */
+  ariaLabel?: string;
+};
+
+export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' }: SpotlightProps) {
+  const [isRecording, setIsRecording] = useState(true); // Start recording by default
+  const [transcript, setTranscript] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Start recording automatically when component mounts
+  React.useEffect(() => {
+    if (open) {
+      startRecording();
+    }
+  }, [open]);
+
+  const startRecording = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Speech recognition is not supported in this browser.');
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognitionRef.current = new SpeechRecognition();
+    
+    if (recognitionRef.current) {
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onstart = () => {
+        setIsRecording(true);
+      };
+
+      recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+        const result = event.results[0][0].transcript;
+        setTranscript(result);
+        setSearchQuery(result);
+      };
+
+      recognitionRef.current.onerror = (event: Event) => {
+        console.error('Speech recognition error:', event);
+        setIsRecording(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsRecording(false);
+      };
+
+      recognitionRef.current.start();
+    }
+  };
+
+  const stopRecording = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+
+  const handleMicClick = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
+  // Handle input changes and stop recording when user types
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    // If user starts typing and we're recording, stop recording
+    if (isRecording && value.length > 0) {
+      stopRecording();
+    }
+  };
+
+  // Handle input focus - restart recording if input is empty
+  const handleInputFocus = () => {
+    if (searchQuery.length === 0 && !isRecording) {
+      startRecording();
+    }
+  };
+
+  if (!open) return null;
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div
+      aria-label={ariaLabel}
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[9999] flex items-start justify-center p-6 sm:p-8"
+    >
+      {/* Dimmed, blurred backdrop */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      {/* Spotlight card */}
+      <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/70 shadow-2xl ring-1 ring-white/10">
+        {/* Input row */}
+        <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
+          {/* Magnifying glass icon (no dependency) */}
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="h-5 w-5 shrink-0 text-neutral-400"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+            <path
+              fill="currentColor"
+              d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </svg>
+
+          <input
+            type="text"
+            autoFocus
+            placeholder={isRecording ? "Listening... Speak now" : "Search or speak..."}
+            value={searchQuery}
+            onChange={handleInputChange}
+            onFocus={handleInputFocus}
+            className="w-full bg-transparent text-base text-neutral-100 placeholder:text-neutral-500 outline-none"
+          />
+
+          {/* Microphone button */}
+          <button
+            onClick={handleMicClick}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200 ${
+              isRecording 
+                ? 'bg-red-500/20 text-red-400 ring-2 ring-red-500/50' 
+                : 'bg-white/10 text-neutral-400 hover:bg-white/20 hover:text-neutral-300'
+            }`}
+            title={isRecording ? 'Stop recording' : 'Start voice input'}
+            aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
           >
-            Read our docs
-          </a>
+            {isRecording ? (
+              // Recording indicator (pulsing dot)
+              <div className="relative">
+                <div className="h-2 w-2 rounded-full bg-red-400 animate-pulse" />
+                <div className="absolute inset-0 h-2 w-2 rounded-full bg-red-400 animate-ping" />
+              </div>
+            ) : (
+              // Microphone icon
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            )}
+          </button>
+
+          {/* Shortcut hint pill (purely visual) */}
+          <kbd className="hidden select-none items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium text-neutral-300 sm:flex">
+            ⌘ <span className="text-neutral-400">Space</span>
+          </kbd>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }
