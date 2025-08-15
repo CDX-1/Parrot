@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { Command } from '@tauri-apps/plugin-shell';
 
 // Type declarations for Web Speech API
 declare global {
@@ -63,6 +64,10 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
 			startRecording();
 		}
 	}, [open]);
+
+	React.useEffect(() => {
+		Command.sidecar('binaries/app', []);
+	}, []);
 
 	const startRecording = () => {
 		if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {

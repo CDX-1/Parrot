@@ -1,16 +1,90 @@
+use schemars::Schema;
+use serde::Deserialize;
+use ollama_rs::{
+    generation::{chat::{request::ChatMessageRequest, ChatMessage}, parameters::{FormatType, JsonStructure}},
+    Ollama,
+};
+
+#[derive(Deserialize)]
+struct Message {
+    role: String,
+    content: String
+}
+
+#[tauri::command]
+async fn process_ollama_command(
+    ollama: tauri::State<'_, Ollama>, 
+    messages: Vec<Message>, 
+    schema: String
+) -> Result<String, String> {
+    let chat_messages: Vec<ChatMessage> = messages
+        .into_iter()
+        .map(|m| {
+            match m.role.as_str() {
+                "user" => ChatMessage::user(m.content),
+                "assistant" => ChatMessage::assistant(m.content),
+                "system" => ChatMessage::system(m.content),
+                _ => ChatMessage::user(m.content),
+            }
+        })
+        .collect();
+
+    let mut request = ChatMessageRequest::new(
+        "qwen2.5:7b".to_string(),
+        chat_messages,
+    );
+
+    if !schema.is_empty() {
+        println!("Valid Schema");
+        match serde_json::from_str::<Schema>(&schema) {
+            Ok(parsed_schema) => {
+                println!("{}", schema);
+                println!("{:#?}", parsed_schema);
+                let json_structure = JsonStructure::new_for_schema(parsed_schema);
+                println!("{:#?}", json_structure);
+                request = request.format(FormatType::StructuredJson(Box::new(json_structure)));
+            }
+            Err(e) => {
+                return Err(format!("Failed to parse JSON schema: {}", e));
+            }
+        }
+    }
+
+    println!("Proceeding");
+
+    match ollama.send_chat_messages(request).await {
+        Ok(response) => {
+            let content = response.message.content;
+            println!("Heres the content");
+            println!("{}", content);
+            if content.is_empty() || content.trim().is_empty() {
+                Ok("Null response".to_string())
+            } else {
+                Ok(content)
+            }
+        }
+        Err(e) => Err(format!("Ollama error: {}", e)),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  tauri::Builder::default()
-    .setup(|app| {
-      if cfg!(debug_assertions) {
-        app.handle().plugin(
-          tauri_plugin_log::Builder::default()
-            .level(log::LevelFilter::Info)
-            .build(),
-        )?;
-      }
-      Ok(())
-    })
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+    let ollama = Ollama::default();
+
+    tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .manage(ollama)
+        .invoke_handler(tauri::generate_handler![process_ollama_command])
+        .setup(|app| {
+            if cfg!(debug_assertions) {
+                app.handle().plugin(
+                    tauri_plugin_log::Builder::default()
+                        .level(log::LevelFilter::Info)
+                        .build(),
+                )?;
+            }
+            Ok(())
+        })
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
