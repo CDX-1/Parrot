@@ -17,17 +17,25 @@ Action = Union[OpenUrlAction, RevealPathAction]
 
 class ActionResponse(BaseModel):
     actions: List[Action]
+    
+def process_command(prompt):
+	response = chat(
+		messages=[
+			{
+				'role': 'system',
+				'content': 'You are a friendly AI assistant who helps the user manage their desktop computer, do not add unnecessary actions.' 
+			},
+			{
+				'role': 'user',
+				'content': prompt,
+			}
+		],
+		model='qwen2.5:7b',
+		format=ActionResponse.model_json_schema()
+	)
+    
+	actions = ActionResponse.model_validate_json(response.message.content)
+	print(actions)
 
-response = chat(
-	messages=[
-		{
-			'role': 'user',
-      		'content': 'Open youtube',
-    	}
-  	],
-  	model='qwen2.5:7b',
-  	format=ActionResponse.model_json_schema(),
-)
-
-country = ActionResponse.model_validate_json(response.message.content)
-print(country)
+while True:
+    process_command(input("> "))
