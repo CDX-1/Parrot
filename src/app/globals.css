@@ -24,3 +24,23 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+#mic-button:hover{
+  background-color: #000000;
+  cursor: pointer;
+}
+
+#mic-button:active{
+  background-color: #FF0000;
+  cursor: pointer;
+}
+
+#enter-button:hover{
+  background-color: #6c6767;
+  cursor: pointer;
+}
+
+#enter-button:active{
+  background-color: #000000;
+  cursor: pointer;
+}

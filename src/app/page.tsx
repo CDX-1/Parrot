@@ -174,6 +174,7 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
 
           {/* Microphone button */}
           <button
+          id = "mic-button"
             onClick={handleMicClick}
             className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200 ${
               isRecording 
@@ -198,9 +199,9 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
           </button>
 
           {/* Shortcut hint pill (purely visual) */}
-          <kbd className="hidden select-none items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium text-neutral-300 sm:flex">
-            ⌘ <span className="text-neutral-400">Space</span>
-          </kbd>
+          <button id = "enter-button" className="hidden select-none items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium text-neutral-300 sm:flex">
+          ↳ <span className="text-neutral-400">Enter</span>
+          </button>
         </div>
       </div>
     </div>
