@@ -52,10 +52,17 @@ type SpotlightProps = {
 };
 
 export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' }: SpotlightProps) {
-  const [isRecording, setIsRecording] = useState(false);
+  const [isRecording, setIsRecording] = useState(true); // Start recording by default
   const [transcript, setTranscript] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Start recording automatically when component mounts
+  React.useEffect(() => {
+    if (open) {
+      startRecording();
+    }
+  }, [open]);
 
   const startRecording = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -98,12 +105,31 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
+    setIsRecording(false);
   };
 
   const handleMicClick = () => {
     if (isRecording) {
       stopRecording();
     } else {
+      startRecording();
+    }
+  };
+
+  // Handle input changes and stop recording when user types
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    // If user starts typing and we're recording, stop recording
+    if (isRecording && value.length > 0) {
+      stopRecording();
+    }
+  };
+
+  // Handle input focus - restart recording if input is empty
+  const handleInputFocus = () => {
+    if (searchQuery.length === 0 && !isRecording) {
       startRecording();
     }
   };
@@ -132,16 +158,17 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
           >
             <path
               fill="currentColor"
-              d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"
+              d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"
             />
           </svg>
 
           <input
             type="text"
             autoFocus
-            placeholder="Search or speak..."
+            placeholder={isRecording ? "Listening... Speak now" : "Search or speak..."}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleInputChange}
+            onFocus={handleInputFocus}
             className="w-full bg-transparent text-base text-neutral-100 placeholder:text-neutral-500 outline-none"
           />
 
