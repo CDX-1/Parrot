@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Command } from '@tauri-apps/plugin-shell';
+import { processCommand } from '@/lib/ollama';
 
 // Type declarations for Web Speech API
 declare global {
@@ -64,10 +64,6 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
 			startRecording();
 		}
 	}, [open]);
-
-	React.useEffect(() => {
-		Command.sidecar('binaries/app', []);
-	}, []);
 
 	const startRecording = () => {
 		if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -203,7 +199,7 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
 
 					{/* Shortcut hint pill (purely visual) */}
 					<kbd className="hidden select-none items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium text-neutral-300 sm:flex">
-						↵ <span className="text-neutral-400">Enter</span>
+						⌘ <span className="text-neutral-400">Space</span>
 					</kbd>
 				</div>
 			</div>
