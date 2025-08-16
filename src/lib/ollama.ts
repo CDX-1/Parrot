@@ -9,21 +9,11 @@ export interface OllamaResponse {
     executor: () => Promise<OllamaResponse | null>
 }
 
-const generateContext = () => {
+const generateContext = async () => {
     const baseContext: { role: string, content: string }[] = [
         {
             'role': 'system',
-            'content': `You are a friendly AI assistant who helps the user manage their desktop computer. 
-                You have access to various actions including file operations, web searches, and system information gathering.
-                
-                If you don't have enough information to complete a request, use actions that are prefixed with 'request_' in order to
-                request more information from the system to complete the original request. Please ensure that you do not submit any
-                actions other than request actions if you are making a request unless necessary.
-                - request_list_files: Request lstat of the providied file or directory
-
-                If a request is provided, you will be reprompted with the retrieved information
-                
-                Only respond with schema matching JSON. Do not add unnecessary actions.`
+            'content': `You are a friendly AI assistant who helps the user manage their desktop computer. Do not add unnecessary actions.`
         },
         {
             'role': 'system', 
@@ -32,15 +22,22 @@ const generateContext = () => {
         }
     ];
 
-    // Fetch context from the system (ex: installed programs, processes,)
+    // Fetch context from the system (ex: installed programs, processes)
+    
+
+    const installed_apps = await invoke('get_installed_programs');
+    baseContext.push({
+        role: 'system',
+        content: `Here is a list of installed programs in JSON, this may be needed in your response or it may be unnecessary: ${JSON.stringify(installed_apps)}`
+    });
 
     return baseContext;
 }
 
 // TODO: Return a callback so that actions can be manually executed by the user once generated
-export const processCommand = async (command: string, model: string = "qwen2.5:7b", context: string[] = []): Promise<OllamaResponse | null> => {
+export const processCommand = async (command: string, model: string = "gemma3:12b-it-qat", context: string[] = []): Promise<OllamaResponse | null> => {
     const joinedMessages = [
-        ...generateContext(),
+        ...(await generateContext()),
         ...context,
         {
             'role': 'user',

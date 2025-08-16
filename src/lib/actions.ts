@@ -5,11 +5,11 @@ const PathParameterDescription = "A path in the users file system";
 
 // ====================== ACTIONS ======================
 
-export const DisplayTextActionSchema = z.object({
-    id: z.literal("display_text").describe("Displays a body of text to the user"),
-    description: z.string(),
-    content: z.string().describe("The body of text to display")
-});
+// export const DisplayTextActionSchema = z.object({
+//     id: z.literal("display_text").describe("Displays a body of text to the user"),
+//     description: z.string(),
+//     content: z.string().describe("The body of text to display")
+// });
 
 export const OpenUrlActionSchema = z.object({
     id: z.literal("open_url").describe("Open a URL in the users default browser"),
@@ -39,23 +39,23 @@ export const CreateFileActionSchema = z.object({
 
 // ====================== REQUEST ======================
 
-export const ListFilesActionSchema = z.object({
-    id: z.literal("request_list_files").describe("List files and directories in a specified path"),
-    description: z.string(),
-    path: z.string().describe(PathParameterDescription),
-    pattern: z.string().optional().describe("File pattern to match (e.g., '*.txt', '*.js')")
-});
+// export const ListFilesActionSchema = z.object({
+//     id: z.literal("request_list_files").describe("List files and directories in a specified path"),
+//     description: z.string(),
+//     path: z.string().describe(PathParameterDescription),
+//     pattern: z.string().optional().describe("File pattern to match (e.g., '*.txt', '*.js')")
+// });
 
 // ====================== RESPONSE ======================
 
 export const ActionSchema = z.discriminatedUnion('id', [
-    DisplayTextActionSchema,
+    // DisplayTextActionSchema,
     OpenUrlActionSchema,
     ExecuteFileActionSchema,
     RevealPathActionSchema,
     CreateFileActionSchema,
 
-    ListFilesActionSchema
+    // ListFilesActionSchema
 ]);
 export const ActionResponseSchema = z.object({
     summary: z.string().describe("A brief summary of the actions that are to be executed"),
