@@ -20,14 +20,6 @@ struct Message {
     content: String,
 }
 
-#[derive(Deserialize, serde::Serialize)]
-struct InstalledApp {
-    name: String,
-    path: String,
-    version: Option<String>,
-    publisher: Option<String>
-}
-
 #[tauri::command]
 async fn process_ollama_command(
     ollama: tauri::State<'_, Ollama>,
@@ -91,13 +83,7 @@ fn get_installed_programs() -> Vec<InstalledApp> {
                         if let Ok(name) = name {
                             let version = subkey.get_value("DisplayVersion").ok();
                             let publisher = subkey.get_value("Publisher").ok();
-                            let install_path = subkey.get_value("InstallLocation").ok().unwrap_or_default();
-                            apps.push(InstalledApp { 
-                                name, 
-                                path: install_path,
-                                version, 
-                                publisher 
-                            });
+                            apps.push(InstalledApp { name, version, publisher });
                         }
                     }
                 }
@@ -145,10 +131,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .manage(ollama)
-        .invoke_handler(tauri::generate_handler![
-            process_ollama_command,
-            get_installed_programs
-        ])
+        .invoke_handler(tauri::generate_handler![process_ollama_command])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
