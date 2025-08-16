@@ -12,6 +12,7 @@ export default function Spotlight() {
     const [query, setQuery] = useState("");
     const [loading, setLoading] = useState(false);
     const [response, setResponse] = useState<OllamaResponse | null>(null);
+    const [isListening, setIsListening] = useState(false);
 
     const handleCommand = async () => {
         if (response) {
@@ -39,6 +40,41 @@ export default function Spotlight() {
 
     const handleReset = async () => {
         setResponse(null);
+    };
+
+    const handleVoiceInput = () => {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert('Speech recognition is not supported in your browser');
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+            setIsListening(true);
+        };
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            setQuery(transcript);
+            setIsListening(false);
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            setIsListening(false);
+        };
+
+        recognition.onend = () => {
+            setIsListening(false);
+        };
+
+        recognition.start();
     };
 
     useEffect(() => {
@@ -83,7 +119,12 @@ export default function Spotlight() {
 
                     {/* Microphone button */}
                     <button
-                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-neutral-400 hover:bg-white/20 hover:text-neutral-300 transition-all duration-200"
+                        onClick={handleVoiceInput}
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200 ${
+                            isListening 
+                                ? 'bg-red-500 text-white animate-pulse' 
+                                : 'bg-white/10 text-neutral-400 hover:bg-white/20 hover:text-neutral-300'
+                        }`}
                         title="Start voice input"
                     >
                         {/* Microphone icon */}
