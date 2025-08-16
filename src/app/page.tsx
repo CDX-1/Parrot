@@ -65,6 +65,13 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
 		}
 	}, [open]);
 
+	React.useEffect(() => {
+		(async () => {
+			const actions = await processCommand("Create a text file that says hello in my downloads folder");
+			console.log(actions);
+		})();
+	}, []);
+
 	const startRecording = () => {
 		if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
 			alert('Speech recognition is not supported in this browser.');

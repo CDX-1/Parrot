@@ -5,7 +5,16 @@ import { executeActions } from './executor';
 
 const generateContext = () => {
     return [
-        { 'role': 'system', 'content': 'You are a friendly AI assistant who helps the user manage their desktop computer, do not add unnecessary actions. Do not mess up the users computer.' }
+        {
+            'role': 'system',
+            'content': `You are a friendly AI assistant who helps the user manage their desktop computer, do not add unnecessary actions.
+                It is okay to return no actions if you think that you do not have any matching actions. Do not mess up the users computer.
+                Only respond with schema matching JSON.`
+        },
+        {
+            'role': 'system',
+            'content': `When you are generating file paths, act as if you are in the users home directory. Prefixes to signify your position such as '~' or '@' are unnecessary, you can directly access folders by just using a forward slash.'`
+        }
     ];
 }
 
