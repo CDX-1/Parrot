@@ -30,7 +30,7 @@ async fn process_ollama_command(
         })
         .collect();
 
-    let mut request = ChatMessageRequest::new("qwen2.5:7b".to_string(), chat_messages);
+    let mut request = ChatMessageRequest::new("llama3.1:8b-instruct-q4_0".to_string(), chat_messages);
 
     if !schema.is_empty() {
         println!("Valid Schema");

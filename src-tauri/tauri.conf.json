@@ -14,15 +14,15 @@
       {
         "title": "Parrot",
         "width": 800,
-        "height": 600,
+        "height": 300,
+        "center": true,
+        "shadow": false,
         "resizable": false,
-        "fullscreen": false,
+        "skipTaskbar": true,
+        "alwaysOnTop": true,
         "decorations": false,
         "transparent": true,
-        "alwaysOnTop": true,
-        "skipTaskbar": true,
-        "visible": false,
-        "center": true
+        "fullscreen": false
       }
     ],
     "security": {

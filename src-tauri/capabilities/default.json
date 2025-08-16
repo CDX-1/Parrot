@@ -9,6 +9,12 @@
     "core:default",
     "shell:default",
     "opener:default",
-    "fs:default"
+    "fs:default",
+    {
+      "identifier": "fs:allow-app-write",
+      "allow": [{ "path": "$HOME/**" }]
+    },
+    "core:window:allow-set-size",
+    "core:window:allow-set-position"
   ]
 }
