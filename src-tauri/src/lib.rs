@@ -70,6 +70,7 @@ pub fn run() {
     let ollama = Ollama::default();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .manage(ollama)
