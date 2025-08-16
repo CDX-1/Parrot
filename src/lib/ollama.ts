@@ -19,15 +19,18 @@ const generateContext = () => {
 }
 
 export const processCommand = async (command: string): Promise<Action[] | null> => {
-    const response = await invoke('process_ollama_command', { messages: [
-        ...generateContext(),
-        {
-            'role': 'user',
-            'content': command
-        }
-    ], schema: JSON.stringify(z.toJSONSchema(ActionResponseSchema)) });
+    const response = await invoke('process_ollama_command', {
+        model: "llama3.1:8b-instruct-q4_0",
+        messages: [
+            ...generateContext(),
+            {
+                'role': 'user',
+                'content': command
+            }
+        ], schema: JSON.stringify(z.toJSONSchema(ActionResponseSchema))
+    });
 
-    if (!response || typeof(response) !== "string") {
+    if (!response || typeof (response) !== "string") {
         return null;
     }
 

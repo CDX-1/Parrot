@@ -17,6 +17,7 @@ struct Message {
 #[tauri::command]
 async fn process_ollama_command(
     ollama: tauri::State<'_, Ollama>,
+    model: String,
     messages: Vec<Message>,
     schema: String,
 ) -> Result<String, String> {
@@ -30,16 +31,12 @@ async fn process_ollama_command(
         })
         .collect();
 
-    let mut request = ChatMessageRequest::new("llama3.1:8b-instruct-q4_0".to_string(), chat_messages);
+    let mut request = ChatMessageRequest::new(model, chat_messages);
 
     if !schema.is_empty() {
-        println!("Valid Schema");
         match serde_json::from_str::<Schema>(&schema) {
             Ok(parsed_schema) => {
-                println!("{}", schema);
-                println!("{:#?}", parsed_schema);
                 let json_structure = JsonStructure::new_for_schema(parsed_schema);
-                println!("{:#?}", json_structure);
                 request = request.format(FormatType::StructuredJson(Box::new(json_structure)));
             }
             Err(e) => {
@@ -48,13 +45,9 @@ async fn process_ollama_command(
         }
     }
 
-    println!("Proceeding");
-
     match ollama.send_chat_messages(request).await {
         Ok(response) => {
             let content = response.message.content;
-            println!("Heres the content");
-            println!("{}", content);
             if content.is_empty() || content.trim().is_empty() {
                 Ok("Null response".to_string())
             } else {
