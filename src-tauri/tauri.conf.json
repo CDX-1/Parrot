@@ -17,10 +17,10 @@
         "height": 300,
         "center": true,
         "shadow": false,
-        "resizable": true,
+        "resizable": false,
         "skipTaskbar": false,
         "alwaysOnTop": true,
-        "decorations": true,
+        "decorations": false,
         "transparent": true,
         "fullscreen": false
       }

@@ -136,13 +136,6 @@ export default function Spotlight() {
     }, [isOpen]);
 
     useEffect(() => {
-        // Handle click outside to close
-        const handleClickOutside = (event: MouseEvent) => {
-            if (isOpen && spotlightRef.current && !spotlightRef.current.contains(event.target as Node)) {
-                closeSpotlight();
-            }
-        };
-
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.ctrlKey && event.key === 'k') {
                 event.preventDefault();
@@ -158,14 +151,19 @@ export default function Spotlight() {
             }
         };
 
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
+        // Handle window blur (when clicking on another window)
+        const handleWindowBlur = () => {
+            if (isOpen) {
+                closeSpotlight();
+            }
+        };
+
         document.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('blur', handleWindowBlur);
         
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('blur', handleWindowBlur);
         };
     }, [isOpen, response]); 
 
@@ -176,12 +174,12 @@ export default function Spotlight() {
                     id="spotlight"
                     role="dialog"
                     aria-modal="true"
-                    className="fixed inset-0 z-[9999] flex items-start justify-center p-6 sm:p-8 bg-black/20 backdrop-blur-sm"
+                    className="fixed inset-0 z-[9999] flex items-start justify-center p-6 sm:p-8"
                 >
                     {/* Spotlight card */}
                     <div 
                         ref={spotlightRef}
-                        className="relative z-10 w-full max-w-2xl rounded-2xl border border-white/10 bg-neutral-900 shadow-2xl ring-1 ring-white/10 mt-20"
+                        className="relative z-10 w-full max-w-2xl rounded-2xl bg-neutral-900 shadow-2xl mt-20"
                     >
                 {/* Input row */}
                 <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
