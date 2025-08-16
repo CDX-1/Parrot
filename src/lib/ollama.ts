@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 const generateContext = () => {
     return [
-        { 'role': 'system', 'content': 'You are a friendly AI assistant who helps the user manage their desktop computer, do not add unnecessary actions.' }
+        { 'role': 'system', 'content': 'You are a friendly AI assistant who helps the user manage their desktop computer, do not add unnecessary actions. Do not mess up the users computer.' }
     ];
 }
 
