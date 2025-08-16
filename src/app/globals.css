@@ -199,3 +199,15 @@ body {
   background-clip: padding-box;
   animation: white-border-rotate 1.2s linear infinite;
 }
+
+#parrot-button {
+  background: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+#parrot-button:active {
+  background: #545050;
+  border-radius: 10px;
+  cursor: pointer;
+}
