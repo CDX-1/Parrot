@@ -1,7 +1,7 @@
 'use client';
 
 import { OllamaResponse, processCommand } from "@/lib/ollama";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { ArrowRight, CheckCircle2Icon, RefreshCcw, TerminalSquareIcon, Trash } from "lucide-react";
 import { Button } from "./ui/button";
@@ -40,6 +40,24 @@ export default function Spotlight() {
     const handleReset = async () => {
         setResponse(null);
     };
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.ctrlKey && event.key === 'k') {
+                event.preventDefault();
+                handleReset();
+            }
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                handleCommand();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [response]); 
 
     return (
         <div
@@ -105,11 +123,12 @@ export default function Spotlight() {
                         <Button
                             size="sm"
                             variant="ghost"
-                            className="hover:cursor-pointer"
+                            className="flex items-center hover:cursor-pointer"
                             onClick={handleReset}
                         >
                             <RefreshCcw />
                             <span>Reset</span>
+                            <span className="font-mono text-xs">ctrl + k</span>
                         </Button>
 
                         {loading && (
