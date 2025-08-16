@@ -14,6 +14,14 @@ struct Message {
     content: String,
 }
 
+#[derive(Deserialize, serde::Serialize)]
+struct InstalledApp {
+    name: String,
+    path: String,
+    version: Option<String>,
+    publisher: Option<String>
+}
+
 #[tauri::command]
 async fn process_ollama_command(
     ollama: tauri::State<'_, Ollama>,
@@ -58,6 +66,63 @@ async fn process_ollama_command(
     }
 }
 
+#[tauri::command]
+fn get_installed_programs() -> Vec<InstalledApp> {
+    #[cfg(target_os = "windows")]
+    {
+        let mut apps = Vec::new();
+        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+        let uninstall_paths = [
+            "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+            "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+        ];
+
+        for path in &uninstall_paths {
+            if let Ok(uninstall) = hklm.open_subkey(path) {
+                for subkey in uninstall.enum_keys().flatten() {
+                    if let Ok(subkey) = uninstall.open_subkey(&subkey) {
+                        let name: Result<String, _> = subkey.get_value("DisplayName");
+                        if let Ok(name) = name {
+                            let version = subkey.get_value("DisplayVersion").ok();
+                            let publisher = subkey.get_value("Publisher").ok();
+                            apps.push(InstalledApp { name, version, publisher });
+                        }
+                    }
+                }
+            }
+        }
+        apps
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        use std::fs;
+
+        let mut apps = Vec::new();
+        if let Ok(entries) = fs::read_dir("/Applications") {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    // Remove .app extension for display
+                    let display_name = name.strip_suffix(".app").unwrap_or(name).to_string();
+                    apps.push(InstalledApp {
+                        name: display_name,
+                        path: path.to_string_lossy().to_string(),
+                        version: None,
+                        publisher: None,
+                    });
+                }
+            }
+        }
+        apps
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
+        Vec::new()
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let ollama = Ollama::default();
@@ -68,7 +133,10 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .manage(ollama)
-        .invoke_handler(tauri::generate_handler![process_ollama_command])
+        .invoke_handler(tauri::generate_handler![
+            process_ollama_command,
+            get_installed_programs
+        ])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

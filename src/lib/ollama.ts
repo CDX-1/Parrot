@@ -11,7 +11,14 @@ interface OllamaResponse {
     executor: () => Promise<OllamaResponse | null>
 }
 
-const generateContext = () => {
+interface InstalledApp {
+    name: string,
+    path: string,
+    version?: string,
+    publisher?: string
+}
+
+const generateContext = async () => {
     const baseContext: { role: string, content: string }[] = [
         {
             'role': 'system',
@@ -34,9 +41,14 @@ const generateContext = () => {
         }
     ];
 
-    // Fetch context from the system (ex: installed programs, processes,)
+    // Fetch context from the system (ex: installed programs, processes)
+    const installed_programs: InstalledApp[] = await invoke('get_installed_programs');
+    baseContext.push({ role: 'system', content: JSON.stringify({
+        description: 'This is system context with a list of installed programs',
+        data: installed_programs
+    }) });
 
-
+    // Add conversation history
     for (const message of history) {
         baseContext.push(message);
     }
@@ -51,7 +63,7 @@ export const processCommand = async (command: string, model: string = "llama3.1:
     const response = await invoke('process_ollama_command', {
         model: model,
         messages: [
-            ...generateContext(),
+            ...(await generateContext()),
             ...context,
             {
                 'role': 'user',
