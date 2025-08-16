@@ -3,8 +3,6 @@ import { invoke } from '@tauri-apps/api/core';
 import { z } from 'zod';
 import { executeActions } from './executor';
 
-const history: { role: string, content: string }[] = [];
-
 export interface OllamaResponse {
     actions: Action[],
     summary: string,
@@ -36,28 +34,23 @@ const generateContext = () => {
 
     // Fetch context from the system (ex: installed programs, processes,)
 
-
-    for (const message of history) {
-        baseContext.push(message);
-    }
-
     return baseContext;
 }
 
 // TODO: Return a callback so that actions can be manually executed by the user once generated
-export const processCommand = async (command: string, model: string = "llama3.1:8b-instruct-q4_0", context: string[] = []): Promise<OllamaResponse | null> => {
-    history.push({ role: 'user', content: command });
-
+export const processCommand = async (command: string, model: string = "qwen2.5:7b", context: string[] = []): Promise<OllamaResponse | null> => {
+    const joinedMessages = [
+        ...generateContext(),
+        ...context,
+        {
+            'role': 'user',
+            'content': command
+        }
+    ];
     const response = await invoke('process_ollama_command', {
         model: model,
-        messages: [
-            ...generateContext(),
-            ...context,
-            {
-                'role': 'user',
-                'content': command
-            }
-        ], schema: JSON.stringify(z.toJSONSchema(ActionResponseSchema))
+        messages: joinedMessages,
+        schema: JSON.stringify(z.toJSONSchema(ActionResponseSchema))
     });
 
     if (!response || typeof (response) !== "string") {
@@ -69,15 +62,14 @@ export const processCommand = async (command: string, model: string = "llama3.1:
         return null;
     }
 
-    history.push({ role: 'assistant', content: response });
     const actions = parseResult.data.actions;
-    console.log(parseResult.data);
 
     return {
         actions: actions,
         summary: parseResult.data.summary,
         executor: async () => {
             const fetched = await executeActions(actions);
+            console.log(fetched);
             if (fetched.length > 0) {
                 return processCommand(
                     "You've been provided more context",

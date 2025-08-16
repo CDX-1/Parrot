@@ -57,6 +57,7 @@ async fn process_ollama_command(
             if content.is_empty() || content.trim().is_empty() {
                 Ok("Null response".to_string())
             } else {
+                println!("{}", content);
                 Ok(content)
             }
         }

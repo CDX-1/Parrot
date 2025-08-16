@@ -3,7 +3,7 @@
 import { OllamaResponse, processCommand } from "@/lib/ollama";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { ArrowRight, CheckCircle2Icon, TerminalSquareIcon } from "lucide-react";
+import { ArrowRight, CheckCircle2Icon, RefreshCcw, TerminalSquareIcon, Trash } from "lucide-react";
 import { Button } from "./ui/button";
 import { titlecase } from "@/lib/utils";
 import { Spinner } from "./ui/shadcn-io/spinner";
@@ -14,9 +14,16 @@ export default function Spotlight() {
     const [response, setResponse] = useState<OllamaResponse | null>(null);
 
     const handleCommand = async () => {
+        if (response) {
+            const res = await response.executor();
+            setResponse(res);
+            return;
+        }
+
         setLoading(true);
         try {
             const res = await processCommand(query);
+            console.log(res);
             if (!res) throw Error("Model failed to provide a response");
             setResponse(res);
         } catch (e) {
@@ -25,8 +32,14 @@ export default function Spotlight() {
                 summary: `An error occurred: ${e}`,
                 executor: async () => null
             });
+        } finally {
+            setLoading(false);
         }
     }
+
+    const handleReset = async () => {
+        setResponse(null);
+    };
 
     return (
         <div
@@ -36,7 +49,7 @@ export default function Spotlight() {
             className="fixed inset-0 z-[9999] flex items-start justify-center p-6 sm:p-8"
         >
             {/* Spotlight card */}
-            <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-white/10 bg-neutral-900/70 shadow-2xl ring-1 ring-white/10">
+            <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-white/10 bg-neutral-900 shadow-2xl ring-1 ring-white/10">
                 {/* Input row */}
                 <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
                     {/* Parrot icon */}
@@ -71,7 +84,7 @@ export default function Spotlight() {
                             </div>
 
                             {response.actions.length > 0 && (
-                                <div className="flex flex-col gap-3">
+                                <div className="flex flex-col gap-3 font-mono">
                                     {response.actions.map((action, i) => (
                                         <Alert key={i} variant="default">
                                             <CheckCircle2Icon />
@@ -89,6 +102,16 @@ export default function Spotlight() {
 
                 <div className="flex w-full justify-between border-t-1 px-4 py-2">
                     <div className="flex gap-2 items-center text-muted-foreground text-xs">
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            className="hover:cursor-pointer"
+                            onClick={handleReset}
+                        >
+                            <RefreshCcw />
+                            <span>Reset</span>
+                        </Button>
+
                         {loading && (
                             <>
                                 <Spinner size={18} />
@@ -98,16 +121,18 @@ export default function Spotlight() {
                     </div>
 
                     <div className="flex gap-3 items-center">
-                        <p className="text-muted-foreground text-sm">Press enter or</p>
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            className="hover:cursor-pointer"
-                            onClick={handleCommand}
-                        >
-                            <ArrowRight />
-                            <span>Confirm</span>
-                        </Button>
+                        <div className="flex items-center gap-3">
+                            <p className="text-muted-foreground text-sm">Press enter or</p>
+                            <Button
+                                size="sm"
+                                variant={response ? "outline" : "secondary"}
+                                className="hover:cursor-pointer"
+                                onClick={handleCommand}
+                            >
+                                <ArrowRight />
+                                <span>Confirm</span>
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>

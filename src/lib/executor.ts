@@ -74,7 +74,6 @@ const actionExecutors: {
 export const executeActions = async (actions: Action[]): Promise<unknown[]> => {
     const results: unknown[] = [];
     await Promise.all(actions.map(action => {
-        if (!action.id.startsWith("request_")) return;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         results.push(actionExecutors[action.id](action as any));
     }));
