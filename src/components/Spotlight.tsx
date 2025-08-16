@@ -87,11 +87,11 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
                 const screenWidth = monitor!.size.width;
                 const screenHeight = monitor!.size.height;
 
-                win.setSize(new PhysicalSize(width, height));
-                win.setPosition(new PhysicalPosition(
-                    Math.floor((screenWidth - width) / 2),
-                    Math.floor((screenHeight - height) / 2)
-                ));
+                // win.setSize(new PhysicalSize(width, height));
+                // win.setPosition(new PhysicalPosition(
+                //     Math.floor((screenWidth - width) / 2),
+                //     Math.floor((screenHeight - height) / 2)
+                // ));
             }
         });
 

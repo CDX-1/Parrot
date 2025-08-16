@@ -1,9 +1,9 @@
 'use client';
 
-import Spotlight from '@/components/Spotlight';
+import Spotlight from '@/components/better-spotlight';
 
 export default function Page() {
-	return <div className="w-7xl">
+	return <div className="flex items-center justify-center w-full h-screen">
 		<Spotlight />
 	</div>;
 }
