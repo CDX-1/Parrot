@@ -1,18 +1,23 @@
 'use client';
 
 import { OllamaResponse, processCommand } from "@/lib/ollama";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { ArrowRight, CheckCircle2Icon, RefreshCcw, TerminalSquareIcon, Trash } from "lucide-react";
 import { Button } from "./ui/button";
 import { titlecase } from "@/lib/utils";
 import { Spinner } from "./ui/shadcn-io/spinner";
+import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 export default function Spotlight() {
     const [query, setQuery] = useState("");
     const [loading, setLoading] = useState(false);
     const [response, setResponse] = useState<OllamaResponse | null>(null);
     const [isListening, setIsListening] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const spotlightRef = useRef<HTMLDivElement>(null);
+    const recognitionRef = useRef<SpeechRecognition | null>(null);
 
     const handleCommand = async () => {
         if (response) {
@@ -42,6 +47,32 @@ export default function Spotlight() {
         setResponse(null);
     };
 
+    const toggleSpotlight = () => {
+        setIsOpen(!isOpen);
+        if (!isOpen) {
+            // When opening, focus the input and show window
+            getCurrentWindow().show();
+            getCurrentWindow().setFocus();
+        } else {
+            // When closing, hide window and reset state
+            getCurrentWindow().hide();
+            setResponse(null);
+            setQuery("");
+        }
+    };
+
+    const closeSpotlight = () => {
+        setIsOpen(false);
+        getCurrentWindow().hide();
+        setResponse(null);
+        setQuery("");
+        // Stop any ongoing voice recognition
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+        }
+        setIsListening(false);
+    };
+
     const handleVoiceInput = () => {
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
             alert('Speech recognition is not supported in your browser');
@@ -50,6 +81,7 @@ export default function Spotlight() {
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
+        recognitionRef.current = recognition;
         
         recognition.continuous = false;
         recognition.interimResults = false;
@@ -78,41 +110,98 @@ export default function Spotlight() {
     };
 
     useEffect(() => {
+        // Register global shortcut
+        const registerShortcut = async () => {
+            try {
+                await register('CommandOrControl+Shift+Space', () => {
+                    if (!isOpen) {
+                        setIsOpen(true);
+                        getCurrentWindow().show();
+                        getCurrentWindow().setFocus();
+                        // Start voice input after a short delay to ensure component is mounted
+                        setTimeout(() => handleVoiceInput(), 100);
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to register global shortcut:', error);
+            }
+        };
+
+        registerShortcut();
+
+        // Cleanup on unmount
+        return () => {
+            unregister('CommandOrControl+Shift+Space').catch(console.error);
+        };
+    }, [isOpen]);
+
+    useEffect(() => {
+        // Handle click outside to close
+        const handleClickOutside = (event: MouseEvent) => {
+            if (isOpen && spotlightRef.current && !spotlightRef.current.contains(event.target as Node)) {
+                closeSpotlight();
+            }
+        };
+
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.ctrlKey && event.key === 'k') {
                 event.preventDefault();
                 handleReset();
             }
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && isOpen) {
                 event.preventDefault();
                 handleCommand();
             }
+            if (event.key === 'Escape' && isOpen) {
+                event.preventDefault();
+                closeSpotlight();
+            }
         };
 
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
         document.addEventListener('keydown', handleKeyDown);
+        
         return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [response]); 
+    }, [isOpen, response]); 
 
     return (
-        <div
-            id="spotlight"
-            role="dialog"
-            aria-modal="true"
-            className="fixed inset-0 z-[9999] flex items-start justify-center p-6 sm:p-8"
-        >
-            {/* Spotlight card */}
-            <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-white/10 bg-neutral-900 shadow-2xl ring-1 ring-white/10">
+        <>
+            {isOpen && (
+                <div
+                    id="spotlight"
+                    role="dialog"
+                    aria-modal="true"
+                    className="fixed inset-0 z-[9999] flex items-start justify-center p-6 sm:p-8 bg-black/20 backdrop-blur-sm"
+                >
+                    {/* Spotlight card */}
+                    <div 
+                        ref={spotlightRef}
+                        className="relative z-10 w-full max-w-2xl rounded-2xl border border-white/10 bg-neutral-900 shadow-2xl ring-1 ring-white/10 mt-20"
+                    >
                 {/* Input row */}
                 <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
                     {/* Parrot icon */}
                     <img src="parrot.png" width={30} height={30} />
 
                     <input
+                        autoFocus
                         type="text"
                         value={query}
-                        onChange={(e) => setQuery(e.target.value)}
+                        onChange={(e) => {
+                            setQuery(e.target.value);
+                            if (isListening) {
+                                // Stop voice recognition when user starts typing
+                                if (recognitionRef.current) {
+                                    recognitionRef.current.stop();
+                                }
+                                setIsListening(false);
+                            }
+                        }}
                         placeholder="Search or speak..."
                         className="w-full bg-transparent text-base text-neutral-100 placeholder:text-neutral-500 outline-none"
                     />
@@ -197,5 +286,7 @@ export default function Spotlight() {
                 </div>
             </div>
         </div>
+            )}
+        </>
     );
 }
