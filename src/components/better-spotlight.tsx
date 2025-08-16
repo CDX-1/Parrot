@@ -415,11 +415,17 @@ export default function Spotlight() {
         }
     };
 
+    function handleParrotClick() {
+        location.reload();
+    }
+
     return (
         <div className="flex flex-col w-full rounded-lg px-3 py-4 gap-3 bg-neutral-900/70 border-white/20 border-2">
             {/* Search bar */}
             <div className="flex items-center gap-3">
-                <img src="parrot.png" width={30} height={30} alt="Assistant" />
+                <button id = "parrot-button" onClick = {handleParrotClick}>
+                    <img src="parrot.png" width={30} height={30} alt="Assistant" />
+                </button>
                 <input 
                     ref={inputRef}
                     placeholder={isRecording ? "Listening... Speak now" : "Search or speak..."}
