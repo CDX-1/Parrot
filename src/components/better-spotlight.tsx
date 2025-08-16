@@ -3,7 +3,7 @@
 import { OllamaResponse, processCommand } from "@/lib/ollama";
 import { useState, useEffect, useRef } from "react";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { ArrowRight, CheckCircle2Icon, RefreshCcw, TerminalSquareIcon, Trash } from "lucide-react";
+import { ArrowRight, CheckCircle2Icon, RefreshCcw, TerminalSquareIcon, Trash, ChevronDown, Download } from "lucide-react";
 import { Button } from "./ui/button";
 import { titlecase } from "@/lib/utils";
 import { Spinner } from "./ui/shadcn-io/spinner";
@@ -13,11 +13,72 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 export default function Spotlight() {
     const [query, setQuery] = useState("");
     const [loading, setLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState("Loading...");
     const [response, setResponse] = useState<OllamaResponse | null>(null);
     const [isListening, setIsListening] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [selectedModel, setSelectedModel] = useState("llama3.2:3b-instruct");
+    const [installedModels, setInstalledModels] = useState<string[]>([]);
+    const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
     const spotlightRef = useRef<HTMLDivElement>(null);
+    const modelDropdownRef = useRef<HTMLDivElement>(null);
     const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+    // Available models list with full IDs - you can modify this based on your needs
+    const availableModels = [
+        "llama3.2:3b-instruct",
+        "llama3.2:1b-instruct",
+        "llama3.1:8b-instruct",
+        "llama3.1:70b-instruct",
+        "llama2:7b-chat",
+        "llama2:13b-chat",
+        "codellama:7b-instruct",
+        "codellama:13b-instruct",
+        "mistral:7b-instruct",
+        "phi:3.5",
+        "gemma:7b-instruct",
+        "qwen2.5:7b-instruct",
+        "qwen2.5:14b-instruct"
+    ];
+
+    // Check which models are installed
+    const checkInstalledModels = async () => {
+        try {
+            const response = await fetch('http://localhost:11434/api/tags');
+            const data = await response.json();
+            const modelNames = data.models?.map((model: any) => model.name.split(':')[0]) || [];
+            setInstalledModels(modelNames);
+        } catch (error) {
+            console.error('Failed to fetch installed models:', error);
+            setInstalledModels([]);
+        }
+    };
+
+    // Pull a model if not installed
+    const pullModel = async (modelName: string) => {
+        try {
+            setLoadingMessage(`Downloading ${modelName}...`);
+            const response = await fetch('http://localhost:11434/api/pull', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: modelName }),
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to pull model: ${response.statusText}`);
+            }
+            
+            // Refresh the installed models list
+            await checkInstalledModels();
+            setLoadingMessage("Loading...");
+        } catch (error) {
+            console.error('Failed to pull model:', error);
+            setLoadingMessage("Loading...");
+            throw error;
+        }
+    };
 
     const handleCommand = async () => {
         if (response) {
@@ -27,8 +88,9 @@ export default function Spotlight() {
         }
 
         setLoading(true);
+        setLoadingMessage("Loading...");
         try {
-            const res = await processCommand(query);
+            const res = await processCommand(query, selectedModel);
             console.log(res);
             if (!res) throw Error("Model failed to provide a response");
             setResponse(res);
@@ -38,6 +100,18 @@ export default function Spotlight() {
                 summary: `An error occurred: ${e}`,
                 executor: async () => null
             });
+        } finally {
+            setLoading(false);
+            setLoadingMessage("Loading...");
+        }
+    }
+
+    const handleInstallModel = async () => {
+        setLoading(true);
+        try {
+            await pullModel(selectedModel);
+        } catch (e) {
+            console.error('Failed to install model:', e);
         } finally {
             setLoading(false);
         }
@@ -118,6 +192,8 @@ export default function Spotlight() {
                         setIsOpen(true);
                         getCurrentWindow().show();
                         getCurrentWindow().setFocus();
+                        // Check installed models when opening
+                        checkInstalledModels();
                         // Start voice input after a short delay to ensure component is mounted
                         setTimeout(() => handleVoiceInput(), 100);
                     }
@@ -128,6 +204,8 @@ export default function Spotlight() {
         };
 
         registerShortcut();
+        // Check installed models on mount
+        checkInstalledModels();
 
         // Cleanup on unmount
         return () => {
@@ -158,11 +236,20 @@ export default function Spotlight() {
             }
         };
 
+        // Handle click outside model dropdown
+        const handleClickOutside = (event: MouseEvent) => {
+            if (modelDropdownRef.current && !modelDropdownRef.current.contains(event.target as Node)) {
+                setIsModelDropdownOpen(false);
+            }
+        };
+
         document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('mousedown', handleClickOutside);
         window.addEventListener('blur', handleWindowBlur);
         
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('mousedown', handleClickOutside);
             window.removeEventListener('blur', handleWindowBlur);
         };
     }, [isOpen, response]); 
@@ -219,6 +306,53 @@ export default function Spotlight() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                         </svg>
                     </button>
+
+                    {/* Model Selector Dropdown */}
+                    <div className="relative" ref={modelDropdownRef}>
+                        <button
+                            onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                            className={`flex h-8 items-center justify-center rounded-lg px-3 py-1 transition-all duration-200 text-sm ${
+                                installedModels.includes(selectedModel.split(':')[0])
+                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                    : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                            } hover:bg-white/10`}
+                            title={`Current model: ${selectedModel} (${installedModels.includes(selectedModel.split(':')[0]) ? 'installed' : 'not installed'})`}
+                        >
+                            <span className="mr-1 max-w-24 truncate">{selectedModel}</span>
+                            <ChevronDown className="h-3 w-3" />
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {isModelDropdownOpen && (
+                            <div className="absolute right-0 top-9 z-50 w-56 rounded-lg bg-neutral-800 border border-white/10 shadow-2xl py-1 max-h-64 overflow-y-auto">
+                                {availableModels.map((model) => {
+                                    const isInstalled = installedModels.includes(model.split(':')[0]);
+                                    return (
+                                        <button
+                                            key={model}
+                                            onClick={() => {
+                                                setSelectedModel(model);
+                                                setIsModelDropdownOpen(false);
+                                            }}
+                                            className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-white/5 flex items-center justify-between ${
+                                                selectedModel === model ? 'bg-white/10' : ''
+                                            }`}
+                                        >
+                                            <span className="text-neutral-200 truncate">{model}</span>
+                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                                {!isInstalled && <Download className="h-3 w-3 text-yellow-400" />}
+                                                <div
+                                                    className={`w-2 h-2 rounded-full ${
+                                                        isInstalled ? 'bg-green-400' : 'bg-yellow-400'
+                                                    }`}
+                                                />
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {response !== null && (
@@ -262,7 +396,7 @@ export default function Spotlight() {
                         {loading && (
                             <>
                                 <Spinner size={18} />
-                                <p>Loading...</p>
+                                <p>{loadingMessage}</p>
                             </>
                         )}
                     </div>
@@ -270,15 +404,27 @@ export default function Spotlight() {
                     <div className="flex gap-3 items-center">
                         <div className="flex items-center gap-3">
                             <p className="text-muted-foreground text-sm">Press enter or</p>
-                            <Button
-                                size="sm"
-                                variant={response ? "outline" : "secondary"}
-                                className="hover:cursor-pointer"
-                                onClick={handleCommand}
-                            >
-                                <ArrowRight />
-                                <span>Confirm</span>
-                            </Button>
+                            {installedModels.includes(selectedModel.split(':')[0]) ? (
+                                <Button
+                                    size="sm"
+                                    variant={response ? "outline" : "secondary"}
+                                    className="hover:cursor-pointer"
+                                    onClick={handleCommand}
+                                >
+                                    <ArrowRight />
+                                    <span>Confirm</span>
+                                </Button>
+                            ) : (
+                                <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    className="hover:cursor-pointer bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/30"
+                                    onClick={handleInstallModel}
+                                >
+                                    <Download className="h-4 w-4" />
+                                    <span>Install {selectedModel.split(':')[0]}</span>
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
