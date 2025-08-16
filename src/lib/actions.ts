@@ -7,7 +7,7 @@ export const OpenUrlActionSchema = z.object({
 });
 
 export const ExecuteFileActionSchema = z.object({
-    id: z.literal("execute_path"),
+    id: z.literal("execute_file"),
     description: z.string(),
     path: z.string().describe("A fully qualified path in the users file system")
 });
@@ -24,6 +24,7 @@ export const CreateFileActionSchema = z.object({
     path: z.string().describe("A fully qualified path in the users file system"),
     content: z.string().describe("The content that the file should be initialized with")
 });
+export type CreateFileAction = z.infer<typeof CreateFileActionSchema>;
 
 export const ActionSchema = z.discriminatedUnion('id', [OpenUrlActionSchema, ExecuteFileActionSchema, CreateFileActionSchema]);
 export const ActionResponseSchema = z.object({

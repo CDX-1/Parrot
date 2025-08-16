@@ -1,7 +1,7 @@
-import { zodToJsonSchema } from 'zod-to-json-schema';
 import { ActionResponseSchema, Action } from './actions';
 import { invoke } from '@tauri-apps/api/core';
 import { z } from 'zod';
+import { executeActions } from './executor';
 
 const generateContext = () => {
     return [
@@ -10,8 +10,6 @@ const generateContext = () => {
 }
 
 export const processCommand = async (command: string): Promise<Action[] | null> => {
-    console.log(JSON.stringify(zodToJsonSchema(ActionResponseSchema)));
-
     const response = await invoke('process_ollama_command', { messages: [
         ...generateContext(),
         {
@@ -29,5 +27,7 @@ export const processCommand = async (command: string): Promise<Action[] | null> 
         return null;
     }
 
-    return parseResult.data.actions;
+    const actions = parseResult.data.actions;
+    executeActions(actions);
+    return actions;
 }
