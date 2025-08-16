@@ -56,6 +56,8 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
 	const [isRecording, setIsRecording] = useState(true); // Start recording by default
 	const [transcript, setTranscript] = useState('');
 	const [searchQuery, setSearchQuery] = useState('');
+	const [ollamaResponse, setOllamaResponse] = useState('');
+	const [isProcessing, setIsProcessing] = useState(false);
 	const recognitionRef = useRef<SpeechRecognition | null>(null);
 
 	// Start recording automatically when component mounts
@@ -142,6 +144,50 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
 		}
 	};
 
+	// Process command with Ollama only when Enter is pressed
+	const handleSubmit = async () => {
+		if (!searchQuery.trim()) return;
+
+		setIsProcessing(true);
+		setOllamaResponse('');
+
+		try {
+			const actions = await processCommand(searchQuery);
+
+			if (actions && actions.length > 0) {
+				// Display the actions that will be performed
+				const actionDescriptions = actions.map(action => {
+					switch (action.id) {
+						case 'open_url':
+							return `🌐 Open URL: ${action.description}`;
+						case 'execute_file':
+							return `⚡ Execute: ${action.description}`;
+						case 'create_file':
+							return `📄 Create File: ${action.description}`;
+						default:
+							return `Action: ${action.description}`;
+					}
+				}).join('\n');
+
+				setOllamaResponse(`Actions to perform:\n${actionDescriptions}`);
+			} else {
+				setOllamaResponse('No actions to perform for this command.');
+			}
+		} catch (error) {
+			setOllamaResponse(`Error: ${error}`);
+		} finally {
+			setIsProcessing(false);
+		}
+	};
+
+	// Handle Enter key press
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === 'Enter' && !e.shiftKey) {
+			e.preventDefault();
+			handleSubmit();
+		}
+	};
+
 	if (!open) return null;
 
 	return (
@@ -177,6 +223,7 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
 						value={searchQuery}
 						onChange={handleInputChange}
 						onFocus={handleInputFocus}
+						onKeyDown={handleKeyDown}
 						className="w-full bg-transparent text-base text-neutral-100 placeholder:text-neutral-500 outline-none"
 					/>
 
@@ -204,10 +251,24 @@ export default function Spotlight({ open = true, ariaLabel = 'Spotlight Search' 
 						)}
 					</button>
 
-					{/* Shortcut hint pill (purely visual) */}
-					<kbd className="hidden select-none items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium text-neutral-300 sm:flex">
-						⌘ <span className="text-neutral-400">Space</span>
-					</kbd>
+					{/* enter button */}
+					<button
+						onClick={handleSubmit}
+						disabled={isProcessing || !searchQuery.trim()}
+						className="flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium text-neutral-300 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						{isProcessing ? (
+							<span className="flex items-center gap-0.5">
+								<span className="animate-pulse text-white">•</span>
+								<span className="animate-pulse text-neutral-400" style={{ animationDelay: '0.2s' }}>•</span>
+								<span className="animate-pulse text-white" style={{ animationDelay: '0.4s' }}>•</span>
+							</span>
+						) : (
+							<>
+								↳ <span className="text-neutral-400">Enter</span>
+							</>
+						)}
+					</button>
 				</div>
 			</div>
 		</div>
