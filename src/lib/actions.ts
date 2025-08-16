@@ -39,8 +39,8 @@ export const CreateFileActionSchema = z.object({
 
 // ====================== REQUEST ======================
 
-export const ListFilesActionSchema = z.object({
-    id: z.literal("request_list_files").describe("List files and directories in a specified path"),
+export const LStatActionSchema = z.object({
+    id: z.literal("request_lstat").describe("List files and directories in a specified path"),
     description: z.string(),
     path: z.string().describe(PathParameterDescription),
     pattern: z.string().optional().describe("File pattern to match (e.g., '*.txt', '*.js')")
@@ -65,7 +65,7 @@ export const ActionSchema = z.discriminatedUnion('id', [
     RevealPathActionSchema,
     CreateFileActionSchema,
 
-    ListFilesActionSchema
+    LStatActionSchema
 ]);
 export const ActionResponseSchema = z.object({
     summary: z.string().describe("A brief summary of the actions that are to be executed"),
