@@ -2,6 +2,7 @@ import { ActionResponseSchema, Action } from './actions';
 import { invoke } from '@tauri-apps/api/core';
 import { z } from 'zod';
 import { executeActions } from './executor';
+import { platform, type, version } from '@tauri-apps/plugin-os';
 
 export interface OllamaResponse {
     actions: Action[],
@@ -19,11 +20,18 @@ const generateContext = async () => {
             'role': 'system', 
             'content': `When generating file paths, act as if you are in the user's home directory. 
                 You can directly access folders using forward slashes without prefixes like '~' or '@'.`
+        },
+        {
+            'role': 'system',
+            'content': 'If the user asks you to generate content but does not specify where to store this information or how to provide it, copy it to the users clipboard by default'
         }
     ];
 
     // Fetch context from the system (ex: installed programs, processes)
-    
+    baseContext.push({
+        role: 'system',
+        content: `Here is some information regarding the users operating system: platform: ${platform}, type: ${type}, version: ${version}`
+    });
 
     const installed_apps = await invoke('get_installed_programs');
     baseContext.push({

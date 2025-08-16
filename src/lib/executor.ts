@@ -1,7 +1,8 @@
 import { openPath, openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
 import { path } from "@tauri-apps/api";
 import { Action } from "./actions";
-import { create, exists, lstat, open, readDir } from "@tauri-apps/plugin-fs";
+import { create, exists, open } from "@tauri-apps/plugin-fs";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
 type ActionExecutor<T extends Action = Action> = (action: T) => Promise<unknown> | void;
 
@@ -19,9 +20,6 @@ async function resolvePath(p: string) {
 const actionExecutors: {
     [K in Action['id']]: ActionExecutor<Extract<Action, { id: K }>>;
 } = {
-    display_text: async (action) => {
-        
-    },
     open_url: async (action) => {
         await openUrl(action.url);
     },
@@ -49,25 +47,8 @@ const actionExecutors: {
         await file.close();
     },
 
-    request_list_files: async (action) => {
-        const results = [];
-        const files = await readDir(action.path);
-
-        for (const file in files) {
-            const metadata = await lstat(file);
-
-            results.push({
-                name: path.basename(file),
-                path: file,
-                is_directory: metadata.isDirectory,
-                size: metadata.size
-            });
-        }
-
-        return {
-            files: results,
-            total_count: results.length
-        };
+    copy_to_clipboard: async (action) => {
+        writeText(action.content);
     }
 };
 

@@ -8,7 +8,7 @@ import { Button } from "./ui/button";
 import { titlecase } from "@/lib/utils";
 import { Spinner } from "./ui/shadcn-io/spinner";
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { currentMonitor, getCurrentWindow, PhysicalPosition, PhysicalSize } from '@tauri-apps/api/window';
 
 export default function Spotlight() {
     const [query, setQuery] = useState("");
@@ -28,7 +28,7 @@ export default function Spotlight() {
     const availableModels = [
         "llama3.2:3b-instruct",
         "llama3.2:1b-instruct",
-        "llama3.1:8b-instruct",
+        "llama3.1:8b-instruct-q4_0",
         "llama3.1:70b-instruct",
         "llama2:7b-chat",
         "llama2:13b-chat",
@@ -253,6 +253,35 @@ export default function Spotlight() {
             window.removeEventListener('blur', handleWindowBlur);
         };
     }, [isOpen, response]); 
+
+    useEffect(() => {
+        const observer = new ResizeObserver(async entries => {
+            for (const entry of entries) {
+                const rect = entry.contentRect;
+
+                const width = Math.max(rect.width + 32, 450);
+                const height = Math.max(rect.height + 32, 102);
+
+                const win = getCurrentWindow();
+                const monitor = await currentMonitor();
+
+                const screenWidth = monitor!.size.width;
+                const screenHeight = monitor!.size.height;
+
+                win.setSize(new PhysicalSize(width, height));
+                win.setPosition(new PhysicalPosition(
+                    Math.floor((screenWidth - width) / 2),
+                    Math.floor((screenHeight - height) / 2)
+                ));
+            }
+        });
+
+        const spotlightElement = document.getElementById("spotlight");
+        if (spotlightElement) {
+            observer.observe(spotlightElement);
+        }
+        return () => observer.disconnect();
+    }, []);
 
     return (
         <>

@@ -20,6 +20,7 @@
     "core:window:allow-set-focus",
     "core:window:allow-show",
     "global-shortcut:allow-unregister",
-    "core:window:allow-hide"
+    "core:window:allow-hide",
+    "clipboard-manager:allow-write-text"
   ]
 }

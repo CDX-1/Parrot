@@ -37,6 +37,12 @@ export const CreateFileActionSchema = z.object({
     overwrite: z.boolean().describe("Whether the file should be overidden in the case that it already exists, should typically be false unless necessary")
 });
 
+export const CopyToClipboardActionSchema = z.object({
+    id: z.literal("copy_to_clipboard"),
+    description: z.string(),
+    content: z.string().describe("The content that should be copied the systems clipboard"),
+});
+
 // ====================== REQUEST ======================
 
 // export const ListFilesActionSchema = z.object({
@@ -54,6 +60,7 @@ export const ActionSchema = z.discriminatedUnion('id', [
     ExecuteFileActionSchema,
     RevealPathActionSchema,
     CreateFileActionSchema,
+    CopyToClipboardActionSchema
 
     // ListFilesActionSchema
 ]);
