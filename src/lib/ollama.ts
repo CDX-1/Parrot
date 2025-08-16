@@ -5,7 +5,7 @@ import { executeActions } from './executor';
 
 const history: { role: string, content: string }[] = [];
 
-interface OllamaResponse {
+export interface OllamaResponse {
     actions: Action[],
     summary: string,
     executor: () => Promise<OllamaResponse | null>
@@ -71,6 +71,7 @@ export const processCommand = async (command: string, model: string = "llama3.1:
 
     history.push({ role: 'assistant', content: response });
     const actions = parseResult.data.actions;
+    console.log(parseResult.data);
 
     return {
         actions: actions,
