@@ -1,38 +1,36 @@
-use schemars::Schema;
-use serde::Deserialize;
 use ollama_rs::{
-    generation::{chat::{request::ChatMessageRequest, ChatMessage}, parameters::{FormatType, JsonStructure}},
+    generation::{
+        chat::{request::ChatMessageRequest, ChatMessage},
+        parameters::{FormatType, JsonStructure},
+    },
     Ollama,
 };
+use schemars::Schema;
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct Message {
     role: String,
-    content: String
+    content: String,
 }
 
 #[tauri::command]
 async fn process_ollama_command(
-    ollama: tauri::State<'_, Ollama>, 
-    messages: Vec<Message>, 
-    schema: String
+    ollama: tauri::State<'_, Ollama>,
+    messages: Vec<Message>,
+    schema: String,
 ) -> Result<String, String> {
     let chat_messages: Vec<ChatMessage> = messages
         .into_iter()
-        .map(|m| {
-            match m.role.as_str() {
-                "user" => ChatMessage::user(m.content),
-                "assistant" => ChatMessage::assistant(m.content),
-                "system" => ChatMessage::system(m.content),
-                _ => ChatMessage::user(m.content),
-            }
+        .map(|m| match m.role.as_str() {
+            "user" => ChatMessage::user(m.content),
+            "assistant" => ChatMessage::assistant(m.content),
+            "system" => ChatMessage::system(m.content),
+            _ => ChatMessage::user(m.content),
         })
         .collect();
 
-    let mut request = ChatMessageRequest::new(
-        "qwen2.5:7b".to_string(),
-        chat_messages,
-    );
+    let mut request = ChatMessageRequest::new("qwen2.5:7b".to_string(), chat_messages);
 
     if !schema.is_empty() {
         println!("Valid Schema");
@@ -72,6 +70,7 @@ pub fn run() {
     let ollama = Ollama::default();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .manage(ollama)
         .invoke_handler(tauri::generate_handler![process_ollama_command])
