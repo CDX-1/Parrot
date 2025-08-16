@@ -8,6 +8,12 @@ use ollama_rs::{
 use schemars::Schema;
 use serde::Deserialize;
 
+#[cfg(target_os = "windows")]
+use winreg::{
+    enums::HKEY_LOCAL_MACHINE,
+    RegKey,
+};
+
 #[derive(Deserialize)]
 struct Message {
     role: String,
@@ -85,7 +91,13 @@ fn get_installed_programs() -> Vec<InstalledApp> {
                         if let Ok(name) = name {
                             let version = subkey.get_value("DisplayVersion").ok();
                             let publisher = subkey.get_value("Publisher").ok();
-                            apps.push(InstalledApp { name, version, publisher });
+                            let install_path = subkey.get_value("InstallLocation").ok().unwrap_or_default();
+                            apps.push(InstalledApp { 
+                                name, 
+                                path: install_path,
+                                version, 
+                                publisher 
+                            });
                         }
                     }
                 }
