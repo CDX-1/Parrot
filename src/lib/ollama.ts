@@ -3,8 +3,13 @@ import { invoke } from '@tauri-apps/api/core';
 import { z } from 'zod';
 import { executeActions } from './executor';
 
-// TODO: Retrieve 'requestedInfo' and append it to AI context, append history as 'user' messages
 const history: { role: string, content: string }[] = [];
+
+interface OllamaResponse {
+    actions: Action[],
+    summary: string,
+    executor: () => Promise<OllamaResponse | null>
+}
 
 const generateContext = () => {
     const baseContext: { role: string, content: string }[] = [
@@ -16,7 +21,9 @@ const generateContext = () => {
                 If you don't have enough information to complete a request, use actions that are prefixed with 'request_' in order to
                 request more information from the system to complete the original request. Please ensure that you do not submit any
                 actions other than request actions if you are making a request unless necessary.
-                - request_lstat: Request lstat of the providied file or directory
+                - request_list_files: Request lstat of the providied file or directory
+
+                If a request is provided, you will be reprompted with the retrieved information
                 
                 Only respond with schema matching JSON. Do not add unnecessary actions.`
         },
@@ -27,6 +34,9 @@ const generateContext = () => {
         }
     ];
 
+    // Fetch context from the system (ex: installed programs, processes,)
+
+
     for (const message of history) {
         baseContext.push(message);
     }
@@ -35,13 +45,14 @@ const generateContext = () => {
 }
 
 // TODO: Return a callback so that actions can be manually executed by the user once generated
-export const processCommand = async (command: string): Promise<Action[] | null> => {
+export const processCommand = async (command: string, context: string[] = []): Promise<OllamaResponse | null> => {
     history.push({ role: 'user', content: command });
 
     const response = await invoke('process_ollama_command', {
         model: "llama3.1:8b-instruct-q4_0",
         messages: [
             ...generateContext(),
+            ...context,
             {
                 'role': 'user',
                 'content': command
@@ -60,6 +71,19 @@ export const processCommand = async (command: string): Promise<Action[] | null> 
 
     history.push({ role: 'assistant', content: response });
     const actions = parseResult.data.actions;
-    executeActions(actions);
-    return actions;
+
+    return {
+        actions: actions,
+        summary: parseResult.data.summary,
+        executor: async () => {
+            const fetched = await executeActions(actions);
+            if (fetched.length > 0) {
+                return processCommand(
+                    "You've been provided more context",
+                    fetched.map((f) => JSON.stringify(f))
+                );
+            }
+            return null;
+        }
+    };
 }
