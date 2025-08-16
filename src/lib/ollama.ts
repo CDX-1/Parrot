@@ -45,11 +45,11 @@ const generateContext = () => {
 }
 
 // TODO: Return a callback so that actions can be manually executed by the user once generated
-export const processCommand = async (command: string, context: string[] = []): Promise<OllamaResponse | null> => {
+export const processCommand = async (command: string, model: string = "llama3.1:8b-instruct-q4_0", context: string[] = []): Promise<OllamaResponse | null> => {
     history.push({ role: 'user', content: command });
 
     const response = await invoke('process_ollama_command', {
-        model: "llama3.1:8b-instruct-q4_0",
+        model: model,
         messages: [
             ...generateContext(),
             ...context,
@@ -80,6 +80,7 @@ export const processCommand = async (command: string, context: string[] = []): P
             if (fetched.length > 0) {
                 return processCommand(
                     "You've been provided more context",
+                    model,
                     fetched.map((f) => JSON.stringify(f))
                 );
             }
