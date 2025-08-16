@@ -3,22 +3,39 @@ import { invoke } from '@tauri-apps/api/core';
 import { z } from 'zod';
 import { executeActions } from './executor';
 
+// TODO: Retrieve 'requestedInfo' and append it to AI context, append history as 'user' messages
+const requestedInfo = [];
+const userHistory = [];
+const aiHistory = [];
+
 const generateContext = () => {
-    return [
+    const baseContext = [
         {
             'role': 'system',
-            'content': `You are a friendly AI assistant who helps the user manage their desktop computer, do not add unnecessary actions.
-                It is okay to return no actions if you think that you do not have any matching actions. Do not mess up the users computer.
-                Only respond with schema matching JSON.`
+            'content': `You are a friendly AI assistant who helps the user manage their desktop computer. 
+                You have access to various actions including file operations, web searches, and system information gathering.
+                
+                If you don't have enough information to complete a request, use actions that are prefixed with 'request_' in order to
+                request more information from the system to complete the original request. Please ensure that you do not submit any
+                actions other than request actions if you are making a request unless necessary.
+                - request_list_files: List files and directories
+                
+                Only respond with schema matching JSON. Do not add unnecessary actions.`
         },
         {
-            'role': 'system',
-            'content': `When you are generating file paths, act as if you are in the users home directory. Prefixes to signify your position such as '~' or '@' are unnecessary, you can directly access folders by just using a forward slash.'`
+            'role': 'system', 
+            'content': `When generating file paths, act as if you are in the user's home directory. 
+                You can directly access folders using forward slashes without prefixes like '~' or '@'.`
         }
     ];
+
+    return baseContext;
 }
 
+// TODO: Return a callback so that actions can be manually executed by the user once generated
 export const processCommand = async (command: string): Promise<Action[] | null> => {
+    userHistory.push(command);
+
     const response = await invoke('process_ollama_command', {
         model: "llama3.1:8b-instruct-q4_0",
         messages: [
@@ -39,6 +56,7 @@ export const processCommand = async (command: string): Promise<Action[] | null> 
         return null;
     }
 
+    aiHistory.push(response);
     const actions = parseResult.data.actions;
     executeActions(actions);
     return actions;

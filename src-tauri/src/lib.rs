@@ -31,7 +31,8 @@ async fn process_ollama_command(
         })
         .collect();
 
-    let mut request = ChatMessageRequest::new(model, chat_messages);
+    let mut request: ChatMessageRequest = ChatMessageRequest::new(model, chat_messages);
+    request = request.think(true);
 
     if !schema.is_empty() {
         match serde_json::from_str::<Schema>(&schema) {
