@@ -20,27 +20,182 @@
 }
 
 body {
-  background: var(--background);
+  background: transparent;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
 
-#mic-button:hover{
-  background-color: #000000;
-  cursor: pointer;
+/* Border flow animation */
+@keyframes border-flow {
+  0% {
+    border-image: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b, #10b981, #3b82f6) 1;
+    border-image-slice: 1;
+  }
+  25% {
+    border-image: linear-gradient(135deg, #8b5cf6, #ec4899, #f59e0b, #10b981, #3b82f6, #8b5cf6) 1;
+    border-image-slice: 1;
+  }
+  50% {
+    border-image: linear-gradient(225deg, #ec4899, #f59e0b, #10b981, #3b82f6, #8b5cf6, #ec4899) 1;
+    border-image-slice: 1;
+  }
+  75% {
+    border-image: linear-gradient(315deg, #f59e0b, #10b981, #3b82f6, #8b5cf6, #ec4899, #f59e0b) 1;
+    border-image-slice: 1;
+  }
+  100% {
+    border-image: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b, #10b981, #3b82f6) 1;
+    border-image-slice: 1;
+  }
 }
 
-#mic-button:active{
-  background-color: #FF0000;
-  cursor: pointer;
+.animate-border-flow {
+  animation: border-flow 2s linear infinite;
+  border-width: 2px;
+  border-style: solid;
 }
 
-#enter-button:hover{
-  background-color: #6c6767;
-  cursor: pointer;
+/* White moving border animation for spotlight processing */
+@keyframes white-border-rotate {
+  0% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(0deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  3.125% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(11.25deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  6.25% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(22.5deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  9.375% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(33.75deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  12.5% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(45deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  15.625% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(56.25deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  18.75% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(67.5deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  21.875% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(78.75deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  25% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(90deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  28.125% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(101.25deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  31.25% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(112.5deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  34.375% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(123.75deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  37.5% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(135deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  40.625% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(146.25deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  43.75% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(157.5deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  46.875% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(168.75deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  50% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(180deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  53.125% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(191.25deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  56.25% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(202.5deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  59.375% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(213.75deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  62.5% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(225deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  65.625% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(236.25deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  68.75% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(247.5deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  71.875% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(258.75deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  75% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(270deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  78.125% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(281.25deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  81.25% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(292.5deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  84.375% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(303.75deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  87.5% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(315deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  90.625% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(326.25deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  93.75% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(337.5deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  96.875% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(348.75deg, #fff, transparent, transparent, transparent) border-box;
+  }
+  100% {
+    background: linear-gradient(90deg, #000, #000) padding-box,
+                linear-gradient(360deg, #fff, transparent, transparent, transparent) border-box;
+  }
 }
 
-#enter-button:active{
-  background-color: #000000;
-  cursor: pointer;
+.moving-border-white {
+  position: relative;
+  background: linear-gradient(90deg, #000, #000) padding-box,
+              linear-gradient(90deg, #fff, transparent, transparent, transparent) border-box;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  animation: white-border-rotate 1.2s linear infinite;
 }
