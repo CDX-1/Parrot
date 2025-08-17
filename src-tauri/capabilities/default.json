@@ -21,6 +21,7 @@
     "core:window:allow-show",
     "global-shortcut:allow-unregister",
     "core:window:allow-hide",
-    "clipboard-manager:allow-write-text"
+    "clipboard-manager:allow-write-text",
+    "os:default"
   ]
 }

@@ -30,7 +30,7 @@ const generateContext = async () => {
     // Fetch context from the system (ex: installed programs, processes)
     baseContext.push({
         role: 'system',
-        content: `Here is some information regarding the users operating system: platform: ${platform}, type: ${type}, version: ${version}`
+        content: `Here is some information regarding the users operating system: platform: ${platform()}, type: ${type()}, version: ${version()}`
     });
 
     const installed_apps = await invoke('get_installed_programs');

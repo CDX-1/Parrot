@@ -37,8 +37,9 @@ export default function Spotlight() {
         "mistral:7b-instruct",
         "phi:3.5",
         "gemma:7b-instruct",
-        "qwen2.5:7b-instruct",
-        "qwen2.5:14b-instruct"
+        "qwen2.5:7b",
+        "qwen2.5:14b-instruct",
+        "gemma3:12b-it-qat"
     ];
 
     // Check which models are installed
@@ -387,7 +388,7 @@ export default function Spotlight() {
                 {response !== null && (
                     <>
                         <div className="flex flex-col border-t-1 px-4 py-3 gap-4">
-                            <div className="flex gap-2 items-center text-muted-foreground">
+                            <div className="flex gap-2 items-baseline text-muted-foreground">
                                 <TerminalSquareIcon className="size-4" />
                                 <p>{response.summary}</p>
                             </div>
