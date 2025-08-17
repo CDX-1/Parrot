@@ -17,6 +17,7 @@ export default function Spotlight() {
     const [response, setResponse] = useState<OllamaResponse | null>(null);
     const [isListening, setIsListening] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [isAnimating, setIsAnimating] = useState(false);
     const [selectedModel, setSelectedModel] = useState("llama3.2:3b-instruct");
     const [installedModels, setInstalledModels] = useState<string[]>([]);
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
@@ -122,30 +123,36 @@ export default function Spotlight() {
         setResponse(null);
     };
 
-    const toggleSpotlight = () => {
-        setIsOpen(!isOpen);
-        if (!isOpen) {
-            // When opening, focus the input and show window
-            getCurrentWindow().show();
-            getCurrentWindow().setFocus();
-        } else {
-            // When closing, hide window and reset state
-            getCurrentWindow().hide();
-            setResponse(null);
-            setQuery("");
-        }
+    const openSpotlight = () => {
+        setIsOpen(true);
+        setIsAnimating(true);
+        getCurrentWindow().show();
+        getCurrentWindow().setFocus();
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            setIsAnimating(false);
+        }, 300);
     };
 
     const closeSpotlight = () => {
-        setIsOpen(false);
+        setIsAnimating(true);
+        
+        // Hide window immediately to prevent taskbar appearance
         getCurrentWindow().hide();
-        setResponse(null);
-        setQuery("");
-        // Stop any ongoing voice recognition
-        if (recognitionRef.current) {
-            recognitionRef.current.stop();
-        }
-        setIsListening(false);
+        
+        // Start closing animation
+        setTimeout(() => {
+            setIsOpen(false);
+            setIsAnimating(false);
+            setResponse(null);
+            setQuery("");
+            // Stop any ongoing voice recognition
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+            setIsListening(false);
+        }, 200); // Animation duration
     };
 
     const handleVoiceInput = () => {
@@ -190,13 +197,11 @@ export default function Spotlight() {
             try {
                 await register('CommandOrControl+Shift+Space', () => {
                     if (!isOpen) {
-                        setIsOpen(true);
-                        getCurrentWindow().show();
-                        getCurrentWindow().setFocus();
+                        openSpotlight();
                         // Check installed models when opening
                         checkInstalledModels();
                         // Start voice input after a short delay to ensure component is mounted
-                        setTimeout(() => handleVoiceInput(), 100);
+                        setTimeout(() => handleVoiceInput(), 400);
                     }
                 });
             } catch (error) {
@@ -260,8 +265,9 @@ export default function Spotlight() {
             for (const entry of entries) {
                 const rect = entry.contentRect;
 
-                const width = Math.max(rect.width + 32, 450);
-                const height = Math.max(rect.height + 32, 102);
+                // Set a larger fixed window size to accommodate content and provide clickable area
+                const width = Math.max(rect.width + 200, 800); // Larger width for clickable area
+                const height = Math.max(rect.height + 300, 600); // Larger height for content and clickable area
 
                 const win = getCurrentWindow();
                 const monitor = await currentMonitor();
@@ -284,19 +290,47 @@ export default function Spotlight() {
         return () => observer.disconnect();
     }, []);
 
+    // Animation classes
+    const getAnimationClasses = () => {
+        if (!isOpen) return "opacity-0 scale-75";
+        
+        if (isAnimating && isOpen) {
+            // Opening animation
+            return "animate-in zoom-in-95 duration-300 ease-out";
+        } else if (isAnimating && !isOpen) {
+            // Closing animation
+            return "animate-out zoom-out-95 duration-200 ease-in";
+        }
+        
+        return "opacity-100 scale-100";
+    };
+
     return (
         <>
-            {isOpen && (
+            {(isOpen || isAnimating) && (
                 <div
                     id="spotlight"
                     role="dialog"
                     aria-modal="true"
                     className="fixed inset-0 z-[9999] flex items-start justify-center p-6 sm:p-8"
+                    onClick={(e) => {
+                        // Close if clicking on the backdrop (not the card)
+                        if (e.target === e.currentTarget) {
+                            closeSpotlight();
+                        }
+                    }}
                 >
                     {/* Spotlight card */}
                     <div 
                         ref={spotlightRef}
-                        className="relative z-10 w-full max-w-2xl rounded-2xl bg-neutral-900 shadow-2xl mt-20"
+                        className={`relative z-10 w-full max-w-2xl rounded-2xl bg-neutral-900 shadow-2xl mt-20 transition-all ${getAnimationClasses()}`}
+                        style={{
+                            transformOrigin: 'center top'
+                        }}
+                        onClick={(e) => {
+                            // Prevent closing when clicking inside the card
+                            e.stopPropagation();
+                        }}
                     >
                 {/* Input row */}
                 <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">

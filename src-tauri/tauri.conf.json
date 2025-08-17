@@ -13,12 +13,14 @@
     "windows": [
       {
         "title": "Parrot",
-        "width": 800,
-        "height": 700,
+        "width": 1920,
+        "height": 1080,
+        "x": 0,
+        "y": 0,
         "center": true,
         "shadow": false,
         "resizable": false,
-        "skipTaskbar": false,
+        "skipTaskbar": true,
         "alwaysOnTop": true,
         "decorations": false,
         "transparent": true,
